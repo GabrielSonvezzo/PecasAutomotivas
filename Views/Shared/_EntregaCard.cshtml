@@ -1,0 +1,52 @@
+@model HistoricoEntregaViewModel
+<article class="cartao flex flex-col p-6">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="selo-verde"><i data-lucide="package-check"></i> ENTREGUE / ORIGINAL DE FÁBRICA</span>
+        <span class="text-xs text-tecnico">@Formatacao.Data(Model.DataEntrega)</span>
+    </div>
+
+    <ul class="mt-4 space-y-2">
+        @foreach (var item in Model.Itens)
+        {
+            <li class="flex items-start gap-2.5">
+                <i data-lucide="@UiHelper.IconeCategoria(item.Categoria)" class="mt-0.5 h-4 w-4 text-laranja"></i>
+                <span class="min-w-0 text-sm">
+                    <span class="font-semibold text-white">@(item.Quantidade > 1 ? $"{item.Quantidade}× " : "")@item.Nome</span>
+                    <span class="block text-xs text-tecnico">OEM @item.CodigoOEM · @item.Fabricante</span>
+                </span>
+            </li>
+        }
+    </ul>
+
+    <dl class="mt-4 space-y-1.5 border-t border-white/[0.06] pt-4 text-sm">
+        @if (!string.IsNullOrEmpty(Model.Veiculo))
+        {
+            <div class="flex items-center gap-2 text-tecnico"><i data-lucide="car" class="h-4 w-4"></i><dt class="sr-only">Veículo</dt><dd>@Model.Veiculo</dd></div>
+        }
+        <div class="flex items-center gap-2 text-tecnico"><i data-lucide="map-pin" class="h-4 w-4"></i><dt class="sr-only">Destino</dt><dd>@Model.Cidade / @Model.Estado</dd></div>
+        @if (Model.Economia > 0)
+        {
+            <div class="flex items-center gap-2 text-emerald-300"><i data-lucide="trending-down" class="h-4 w-4"></i><dt class="sr-only">Economia</dt><dd>Economizou @Formatacao.Moeda(Model.Economia) frente à concessionária</dd></div>
+        }
+    </dl>
+
+    @if (Model.Nota is int nota)
+    {
+        <div class="mt-4 rounded-xl bg-carbon-800 p-4">
+            <div class="estrelas" role="img" aria-label="Nota @nota de 5">
+                @for (var i = 1; i <= 5; i++)
+                {
+                    <i data-lucide="star" class="@(i <= nota ? "estrela-cheia" : "estrela-vazia")"></i>
+                }
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Depoimento))
+            {
+                <blockquote class="mt-2 text-sm leading-relaxed text-white/85">“@Model.Depoimento”</blockquote>
+            }
+            @if (!string.IsNullOrEmpty(Model.ClientePublico))
+            {
+                <p class="mt-2 text-xs font-semibold text-tecnico">— @Model.ClientePublico</p>
+            }
+        </div>
+    }
+</article>

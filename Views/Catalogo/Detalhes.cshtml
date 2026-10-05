@@ -1,0 +1,136 @@
+@model PecaDetalhesViewModel
+@{
+    ViewData["Title"] = $"{Model.Nome} — OEM {Model.CodigoOEM}";
+    ViewData["Descricao"] = $"{Model.Nome} original {Model.Fabricante}, código OEM {Model.CodigoOEM}, compatível com {Model.Compatibilidade}. Preço direto da fábrica.";
+    var maxQtd = Math.Min(99, Model.Estoque);
+}
+
+<div class="container-site pt-8">
+    <nav class="text-sm text-tecnico" aria-label="Caminho">
+        <a asp-controller="Catalogo" asp-action="Index" class="hover:text-white">Catálogo</a>
+        <span class="mx-1.5" aria-hidden="true">/</span>
+        <a asp-controller="Catalogo" asp-action="Index" asp-route-Categoria="@((int)Model.Categoria)" class="hover:text-white">@Model.Categoria.NomeExibicao()</a>
+        <span class="mx-1.5" aria-hidden="true">/</span>
+        <span class="text-white">@Model.CodigoOEM</span>
+    </nav>
+</div>
+
+<div class="container-site mt-6 grid gap-10 lg:grid-cols-2">
+    <div>
+        <div class="cartao relative aspect-square overflow-hidden fundo-grade">
+            @if (!string.IsNullOrEmpty(Model.ImagemUrl))
+            {
+                <img src="@Url.Content(Model.ImagemUrl)" alt="@Model.Nome" class="h-full w-full object-cover" />
+            }
+            else
+            {
+                <span class="flex h-full w-full items-center justify-center text-carbon-600"><i data-lucide="@UiHelper.IconeCategoria(Model.Categoria)" class="h-32 w-32"></i></span>
+            }
+            @if (!string.IsNullOrEmpty(Model.NumeroLote))
+            {
+                <div class="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-carbon-950/85 px-5 py-3 backdrop-blur">
+                    <span class="text-sm text-tecnico">Lote de fábrica</span>
+                    <span class="etiqueta-lote">@Model.NumeroLote</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="selo-neutro"><i data-lucide="@UiHelper.IconeCategoria(Model.Categoria)"></i> @Model.Categoria.NomeExibicao()</span>
+            @if (Model.FabricanteHomologado && !string.IsNullOrEmpty(Model.NumeroLote))
+            {
+                <span class="selo-laranja"><i data-lucide="badge-check"></i> Lote certificado de fábrica</span>
+            }
+            @if (Model.Disponivel)
+            {
+                <span class="selo-verde"><i data-lucide="circle-check"></i> @(Model.Estoque <= 5 ? $"Últimas {Model.Estoque} unidades" : "Em estoque")</span>
+            }
+            else
+            {
+                <span class="selo-vermelho">Esgotado</span>
+            }
+        </div>
+
+        <h1 class="mt-4 text-4xl font-extrabold uppercase leading-tight text-white sm:text-5xl">@Model.Nome</h1>
+        <p class="mt-2 text-lg text-tecnico">Fabricado por <strong class="text-white">@Model.Fabricante</strong> · @Model.PaisOrigem</p>
+
+        <div class="cartao mt-6 p-6">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p class="text-sm text-tecnico">Na concessionária <span class="preco-riscado ml-1">@Formatacao.Moeda(Model.PrecoConcessionaria)</span></p>
+                    <p class="mt-2 text-sm text-tecnico">Direto da fábrica</p>
+                    <p class="preco-fabrica mt-1 text-5xl">@Formatacao.Moeda(Model.PrecoFabrica)</p>
+                </div>
+                @if (Model.Economia > 0)
+                {
+                    <div class="rounded-xl bg-emerald-400/10 px-4 py-3 text-right ring-1 ring-inset ring-emerald-400/30">
+                        <p class="font-display text-3xl font-bold leading-none text-emerald-300">-@Formatacao.Percentual(Model.PercentualEconomia)</p>
+                        <p class="mt-1 text-xs text-emerald-200">você economiza @Formatacao.Moeda(Model.Economia)</p>
+                    </div>
+                }
+            </div>
+
+            @if (Model.Disponivel)
+            {
+                <form asp-controller="Pedidos" asp-action="Checkout" method="get" class="mt-6 flex flex-wrap items-end gap-3">
+                    <input type="hidden" name="pecaId" value="@Model.Id" />
+                    <div class="w-28">
+                        <label for="quantidade" class="rotulo">Quantidade</label>
+                        <input id="quantidade" name="quantidade" type="number" min="1" max="@maxQtd" value="1" class="campo" />
+                    </div>
+                    <button type="submit" class="btn-primario btn-lg flex-1"><i data-lucide="shopping-cart"></i> Comprar direto da fábrica</button>
+                </form>
+            }
+            else
+            {
+                <p class="alerta-info mt-6"><i data-lucide="clock"></i> Aguardando o próximo lote da fábrica. Volte em breve.</p>
+            }
+        </div>
+
+        <dl class="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] text-sm">
+            @foreach (var d in new[]
+            {
+                (Rotulo: "Código OEM / Part number", Valor: Model.CodigoOEM),
+                (Rotulo: "SKU da fábrica", Valor: Model.Sku),
+                (Rotulo: "Compatibilidade", Valor: Model.Compatibilidade),
+                (Rotulo: "Garantia", Valor: Model.GarantiaMeses > 0 ? $"{Model.GarantiaMeses} meses de fábrica" : "Sem garantia adicional"),
+                (Rotulo: "Certificação da fábrica", Valor: Model.CertificacaoISO ?? "—"),
+                (Rotulo: "Unidades vendidas", Valor: Formatacao.Inteiro(Model.TotalVendidos))
+            })
+            {
+                <div class="bg-carbon-900 p-4">
+                    <dt class="text-xs text-tecnico">@d.Rotulo</dt>
+                    <dd class="mt-1 font-semibold text-white">@d.Valor</dd>
+                </div>
+            }
+        </dl>
+
+        @if (!string.IsNullOrWhiteSpace(Model.DescricaoTecnica))
+        {
+            <div class="mt-6">
+                <h2 class="text-2xl font-bold text-white">Descrição técnica</h2>
+                <p class="prosa-tecnica mt-2">@Model.DescricaoTecnica</p>
+            </div>
+        }
+
+        <p class="mt-6 flex items-start gap-2 text-sm text-tecnico">
+            <i data-lucide="info" class="mt-0.5 h-4 w-4 text-laranja"></i>
+            Confira o código OEM com o da peça original ou com o manual do veículo antes de comprar.
+        </p>
+    </div>
+</div>
+
+@if (Model.Relacionadas.Count > 0)
+{
+    <section class="container-site mt-20">
+        <h2 class="text-3xl font-extrabold uppercase text-white">Outras peças para @Model.Montadora @Model.Modelo</h2>
+        <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            @foreach (var p in Model.Relacionadas)
+            {
+                <partial name="_PecaCard" model="p" />
+            }
+        </div>
+    </section>
+}

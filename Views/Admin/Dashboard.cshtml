@@ -1,0 +1,144 @@
+@model DashboardAdminViewModel
+@{
+    ViewData["Title"] = "Painel administrativo";
+    var maxCategoria = Model.VendasPorCategoria.Count > 0 ? Model.VendasPorCategoria.Max(v => v.Quantidade) : 0;
+    var totalCategoria = Model.VendasPorCategoria.Sum(v => v.Quantidade);
+    var retorno = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+<div class="container-site flex flex-col gap-8 py-10 lg:flex-row">
+    <partial name="_AdminNav" />
+
+    <div class="min-w-0 flex-1 space-y-8">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <h1 class="text-5xl font-extrabold uppercase text-white">Dashboard</h1>
+                <p class="mt-1 text-tecnico">Vendas, estoque e pedidos em aberto.</p>
+            </div>
+            <a asp-action="NovaPeca" class="btn-primario"><i data-lucide="plus"></i> Nova peça</a>
+        </div>
+
+        <dl class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+            <div class="cartao relative overflow-hidden p-5">
+                <div class="absolute inset-x-0 top-0 h-1 faixa-industrial" aria-hidden="true"></div>
+                <dt class="kpi-rotulo flex items-center gap-2"><i data-lucide="wallet" class="h-4 w-4 text-laranja"></i> Faturamento total</dt>
+                <dd class="kpi-valor mt-3">@Formatacao.Moeda(Model.Faturamento)</dd>
+                <dd class="mt-1 text-xs text-tecnico">@Formatacao.Moeda(Model.FaturamentoMes) neste mês</dd>
+            </div>
+            <div class="cartao p-5">
+                <dt class="kpi-rotulo flex items-center gap-2"><i data-lucide="boxes" class="h-4 w-4 text-laranja"></i> Peças em estoque</dt>
+                <dd class="kpi-valor mt-3">@Formatacao.Inteiro(Model.TotalPecasEstoque)</dd>
+                <dd class="mt-1 text-xs text-tecnico">@Formatacao.Inteiro(Model.PecasCadastradas) itens · @Formatacao.Inteiro(Model.PecasEsgotadas) esgotados</dd>
+            </div>
+            <div class="cartao p-5">
+                <dt class="kpi-rotulo flex items-center gap-2"><i data-lucide="package-check" class="h-4 w-4 text-laranja"></i> Peças vendidas</dt>
+                <dd class="kpi-valor mt-3">@Formatacao.Inteiro(Model.TotalPecasVendidas)</dd>
+                <dd class="mt-1 text-xs text-emerald-300">@Formatacao.Moeda(Model.EconomiaGeradaClientes) economizados pelos clientes</dd>
+            </div>
+            <div class="cartao p-5">
+                <dt class="kpi-rotulo flex items-center gap-2"><i data-lucide="clock" class="h-4 w-4 text-laranja"></i> Pedidos em aberto</dt>
+                <dd class="kpi-valor mt-3 @(Model.PedidosPendentes > 0 ? "text-laranja" : "")">@Formatacao.Inteiro(Model.PedidosPendentes)</dd>
+                <dd class="mt-1 text-xs text-tecnico"><a asp-action="Pedidos" class="hover:text-white">ver todos</a></dd>
+            </div>
+        </dl>
+
+        <section class="cartao overflow-hidden">
+            <div class="flex items-center justify-between px-6 pt-6">
+                <h2 class="text-2xl font-bold text-white">Pedidos em aberto</h2>
+                <a asp-action="Pedidos" class="text-sm font-medium text-laranja hover:underline">Todos os pedidos</a>
+            </div>
+            @if (Model.PedidosEmAberto.Count == 0)
+            {
+                <p class="px-6 py-10 text-center text-sm text-tecnico">Nenhum pedido aguardando ação.</p>
+            }
+            else
+            {
+                <div class="mt-4 overflow-x-auto">
+                    <table class="tabela">
+                        <thead><tr><th>Pedido</th><th>Cliente</th><th>Destino</th><th class="text-right">Valor</th><th>Status</th><th class="text-right">Ações</th></tr></thead>
+                        <tbody>
+                            @foreach (var p in Model.PedidosEmAberto)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="font-semibold text-white">@Formatacao.NumeroPedido(p.Id)</span>
+                                        <span class="block text-xs text-tecnico">@Formatacao.Data(p.DataPedido) · @p.QuantidadeItens un.</span>
+                                    </td>
+                                    <td>
+                                        <span class="block text-white">@p.Cliente</span>
+                                        <span class="block text-xs text-tecnico">@p.Email</span>
+                                    </td>
+                                    <td class="whitespace-nowrap text-tecnico">@p.Cidade / @p.Estado</td>
+                                    <td class="whitespace-nowrap text-right font-semibold text-white">@Formatacao.Moeda(p.ValorTotal)</td>
+                                    <td><span class="selo whitespace-nowrap @UiHelper.ClasseStatusPedido(p.Status)">@p.Status.NomeExibicao()</span></td>
+                                    <td><partial name="_AdminPedidoAcoes" model="p" /></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <div class="grid gap-8 xl:grid-cols-2">
+            <section class="cartao p-6">
+                <h2 class="text-2xl font-bold text-white">Estoque baixo</h2>
+                <p class="text-sm text-tecnico">Lance um novo lote de fábrica direto daqui.</p>
+                @if (Model.EstoqueBaixo.Count == 0)
+                {
+                    <p class="py-8 text-center text-sm text-tecnico">Todos os itens com estoque confortável.</p>
+                }
+                else
+                {
+                    <ul class="mt-4 divide-y divide-white/[0.06]">
+                        @foreach (var e in Model.EstoqueBaixo)
+                        {
+                            <li class="py-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <a asp-action="EditarPeca" asp-route-id="@e.Id" class="font-semibold text-white hover:text-laranja">@e.Nome</a>
+                                        <p class="text-xs text-tecnico">OEM @e.CodigoOEM · lote @(e.NumeroLote ?? "—")</p>
+                                    </div>
+                                    <span class="@(e.Estoque == 0 ? "selo-vermelho" : "selo-laranja") whitespace-nowrap">@(e.Estoque == 0 ? "Esgotado" : $"{e.Estoque} un.")</span>
+                                </div>
+                                <form asp-action="NovoLote" method="post" class="mt-3 flex flex-wrap gap-2">
+                                    <input type="hidden" name="PecaId" value="@e.Id" />
+                                    <input type="hidden" name="returnUrl" value="@retorno" />
+                                    <label class="sr-only" for="lote-@e.Id">Número do novo lote</label>
+                                    <input id="lote-@e.Id" name="NumeroLote" required maxlength="40" pattern="[A-Za-z0-9\-\._/]+" class="campo w-40 py-1.5 text-xs" placeholder="Nº do lote" />
+                                    <label class="sr-only" for="qtd-@e.Id">Quantidade</label>
+                                    <input id="qtd-@e.Id" name="Quantidade" type="number" required min="1" max="100000" class="campo w-24 py-1.5 text-xs" placeholder="Qtd." />
+                                    <button type="submit" class="btn-secundario btn-sm"><i data-lucide="plus"></i> Lançar lote</button>
+                                </form>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+
+            <section class="cartao p-6">
+                <h2 class="text-2xl font-bold text-white">Vendas por categoria</h2>
+                <p class="text-sm text-tecnico">Unidades em pedidos entregues.</p>
+                @if (totalCategoria == 0)
+                {
+                    <p class="py-8 text-center text-sm text-tecnico">Ainda não há entregas confirmadas.</p>
+                }
+                else
+                {
+                    <ul class="mt-5 space-y-4">
+                        @foreach (var v in Model.VendasPorCategoria)
+                        {
+                            var pct = maxCategoria == 0 ? 0 : (int)Math.Round(v.Quantidade * 100.0 / maxCategoria);
+                            <li>
+                                <div class="mb-1.5 flex items-center justify-between text-sm">
+                                    <span class="flex items-center gap-2 text-white"><i data-lucide="@UiHelper.IconeCategoria(v.Categoria)" class="h-4 w-4 text-laranja"></i> @v.Categoria.NomeExibicao()</span>
+                                    <span class="text-tecnico">@Formatacao.Inteiro(v.Quantidade) un. · @Formatacao.Percentual((decimal)Math.Round(v.Quantidade * 100.0 / totalCategoria, 1))</span>
+                                </div>
+                                <div class="barra-progresso" role="presentation"><span data-largura="@pct"></span></div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
+    </div>
+</div>

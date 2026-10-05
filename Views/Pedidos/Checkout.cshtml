@@ -1,0 +1,99 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model CheckoutViewModel
+@{
+    ViewData["Title"] = "Finalizar pedido";
+    var p = Model.Peca!;
+    var ufs = Estados.Siglas.Select(s => new SelectListItem(s, s));
+    var maxQtd = Math.Min(99, p.Estoque);
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+}
+
+<div class="container-site py-10">
+    <a asp-controller="Catalogo" asp-action="Detalhes" asp-route-id="@p.Id" class="inline-flex items-center gap-1.5 text-sm text-tecnico hover:text-white">
+        <i data-lucide="arrow-left" class="h-4 w-4"></i> Voltar para a peça
+    </a>
+    <h1 class="mt-4 text-5xl font-extrabold uppercase text-white">Finalizar pedido</h1>
+    <p class="mt-1 text-tecnico">O pedido é registrado e a fábrica confirma a separação do lote. Nenhum pagamento é cobrado nesta etapa.</p>
+
+    <form asp-action="Criar" method="post" class="mt-8 grid gap-8 lg:grid-cols-12" data-checkout
+          data-preco-fabrica="@p.PrecoFabrica.ToString(inv)" data-preco-concessionaria="@p.PrecoConcessionaria.ToString(inv)">
+        <input type="hidden" asp-for="PecaId" />
+
+        <div class="space-y-6 lg:col-span-7">
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <div class="cartao p-6">
+                <h2 class="text-2xl font-bold text-white">Peça</h2>
+                <div class="mt-4 flex gap-4">
+                    <span class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-carbon-800 text-carbon-600">
+                        @if (!string.IsNullOrEmpty(p.ImagemUrl))
+                        {
+                            <img src="@Url.Content(p.ImagemUrl)" alt="" class="h-full w-full object-cover" />
+                        }
+                        else
+                        {
+                            <i data-lucide="@UiHelper.IconeCategoria(p.Categoria)" class="h-8 w-8"></i>
+                        }
+                    </span>
+                    <div class="min-w-0">
+                        <p class="font-bold text-white">@p.Nome</p>
+                        <p class="text-sm text-tecnico">OEM @p.CodigoOEM · @p.Fabricante</p>
+                        <p class="text-sm text-tecnico">@p.Compatibilidade</p>
+                        @if (!string.IsNullOrEmpty(p.NumeroLote)) { <span class="etiqueta-lote mt-2">Lote @p.NumeroLote</span> }
+                    </div>
+                </div>
+                <div class="mt-5 w-32">
+                    <label asp-for="Quantidade" class="rotulo"></label>
+                    <input asp-for="Quantidade" type="number" min="1" max="@maxQtd" class="campo" data-checkout-quantidade />
+                    <span asp-validation-for="Quantidade"></span>
+                    <p class="ajuda">@Formatacao.Inteiro(p.Estoque) em estoque</p>
+                </div>
+            </div>
+
+            <div class="cartao space-y-4 p-6">
+                <h2 class="text-2xl font-bold text-white">Entrega</h2>
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div class="sm:col-span-2">
+                        <label asp-for="Cidade" class="rotulo"></label>
+                        <input asp-for="Cidade" class="campo" autocomplete="address-level2" />
+                        <span asp-validation-for="Cidade"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Estado" class="rotulo"></label>
+                        <select asp-for="Estado" asp-items="ufs" class="campo" autocomplete="address-level1">
+                            <option value="">UF</option>
+                        </select>
+                        <span asp-validation-for="Estado"></span>
+                    </div>
+                </div>
+                <div>
+                    <label asp-for="VeiculoAplicado" class="rotulo"></label>
+                    <input asp-for="VeiculoAplicado" class="campo" placeholder="Ex.: Chevrolet Onix 1.0 Turbo 2021" />
+                    <span asp-validation-for="VeiculoAplicado"></span>
+                    <p class="ajuda">Ajuda a fábrica a conferir a compatibilidade antes do envio.</p>
+                </div>
+            </div>
+        </div>
+
+        <aside class="lg:col-span-5">
+            <div class="cartao p-6 lg:sticky lg:top-24">
+                <h2 class="text-2xl font-bold text-white">Resumo</h2>
+                <dl class="mt-5 space-y-3 text-sm">
+                    <div class="flex justify-between"><dt class="text-tecnico">Preço unitário de fábrica</dt><dd class="font-semibold text-white">@Formatacao.Moeda(p.PrecoFabrica)</dd></div>
+                    <div class="flex justify-between"><dt class="text-tecnico">Na concessionária sairia</dt><dd class="preco-riscado" data-checkout-concessionaria>@Formatacao.Moeda(p.PrecoConcessionaria * Model.Quantidade)</dd></div>
+                    <div class="flex justify-between text-emerald-300"><dt>Sua economia</dt><dd class="font-semibold" data-checkout-economia>@Formatacao.Moeda((p.PrecoConcessionaria - p.PrecoFabrica) * Model.Quantidade)</dd></div>
+                    <div class="flex items-end justify-between border-t border-white/[0.06] pt-4">
+                        <dt class="font-semibold text-white">Total</dt>
+                        <dd class="preco-fabrica text-4xl" data-checkout-total>@Formatacao.Moeda(p.PrecoFabrica * Model.Quantidade)</dd>
+                    </div>
+                </dl>
+                <p class="ajuda mt-2">Frete e forma de pagamento são combinados com a equipe após a confirmação do lote.</p>
+                <button type="submit" class="btn-primario btn-lg mt-6 w-full"><i data-lucide="check"></i> Confirmar pedido</button>
+            </div>
+        </aside>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

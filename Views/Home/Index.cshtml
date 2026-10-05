@@ -1,0 +1,187 @@
+@model HomeViewModel
+@{
+    ViewData["Title"] = null;
+    var est = Model.Estatisticas;
+}
+
+<section class="relative overflow-hidden border-b border-white/[0.06] fundo-grade">
+    <div class="pointer-events-none absolute -right-40 top-10 hidden h-[34rem] w-[34rem] rotate-12 opacity-[0.07] lg:block faixa-industrial" aria-hidden="true"></div>
+    <div class="container-site relative grid gap-12 py-16 lg:grid-cols-12 lg:py-24">
+        <div class="lg:col-span-7">
+            <span class="etiqueta-lote"><i data-lucide="factory" class="h-3.5 w-3.5"></i> Direto da linha de montagem</span>
+            <h1 class="mt-6 font-display text-5xl font-extrabold uppercase leading-[0.92] text-white sm:text-6xl xl:text-7xl">
+                Peças 100% originais direto das linhas de montagem
+                <span class="mt-2 block text-laranja">Sem intermediários.</span>
+            </h1>
+            <p class="mt-6 max-w-xl text-lg leading-relaxed text-tecnico">
+                A mesma peça que sai da fábrica para a montadora, com o mesmo código OEM e número de lote —
+                pelo preço de fábrica, não pelo preço de balcão da concessionária.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a asp-controller="Catalogo" asp-action="Index" class="btn-primario btn-lg"><i data-lucide="search"></i> Ver catálogo de fábrica</a>
+                <a asp-controller="Historico" asp-action="Index" class="btn-secundario btn-lg"><i data-lucide="package-check"></i> Ver entregas realizadas</a>
+            </div>
+
+            @if (est.PedidosEntregues > 0)
+            {
+                <dl class="mt-12 grid max-w-xl grid-cols-3 gap-6 border-t border-white/[0.06] pt-8">
+                    <div>
+                        <dt class="kpi-rotulo">Pedidos entregues</dt>
+                        <dd class="kpi-valor mt-2">@Formatacao.Inteiro(est.PedidosEntregues)</dd>
+                    </div>
+                    <div>
+                        <dt class="kpi-rotulo">Economia gerada</dt>
+                        <dd class="kpi-valor mt-2 text-laranja">@Formatacao.Moeda(est.EconomiaGerada)</dd>
+                    </div>
+                    <div>
+                        <dt class="kpi-rotulo">Avaliação média</dt>
+                        <dd class="kpi-valor mt-2">@(est.TotalAvaliacoes > 0 ? Formatacao.Nota(est.MediaAvaliacao) : "—")</dd>
+                    </div>
+                </dl>
+            }
+        </div>
+
+        <div class="lg:col-span-5">
+            <form asp-controller="Catalogo" asp-action="Index" method="get" class="cartao relative p-6 sm:p-8">
+                <div class="absolute inset-x-0 top-0 h-1.5 rounded-t-2xl faixa-industrial" aria-hidden="true"></div>
+                <h2 class="text-2xl font-bold text-white">Encontre a peça do seu veículo</h2>
+                <p class="mt-1 text-sm text-tecnico">Escolha montadora, modelo, ano e categoria.</p>
+
+                <div class="mt-6 space-y-4">
+                    <div>
+                        <label for="h-montadora" class="rotulo">Montadora</label>
+                        <select id="h-montadora" name="Montadora" class="campo" data-cascata-montadora="#h-modelo">
+                            <option value="">Todas as montadoras</option>
+                            @foreach (var m in Model.Montadoras)
+                            {
+                                <option value="@m">@m</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label for="h-modelo" class="rotulo">Modelo</label>
+                        <select id="h-modelo" name="Modelo" class="campo" data-cascata-modelo disabled>
+                            <option value="">Selecione a montadora primeiro</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="h-ano" class="rotulo">Ano</label>
+                            <select id="h-ano" name="Ano" class="campo">
+                                <option value="">Qualquer</option>
+                                @foreach (var a in Model.Anos)
+                                {
+                                    <option value="@a">@a</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label for="h-categoria" class="rotulo">Categoria</label>
+                            <select id="h-categoria" name="Categoria" class="campo" asp-items="Html.GetEnumSelectList<CategoriaPeca>()">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="h-termo" class="rotulo">Ou digite o código OEM</label>
+                        <input id="h-termo" name="Termo" type="search" maxlength="80" class="campo" placeholder="Ex.: 04E115561H" />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primario btn-lg mt-6 w-full"><i data-lucide="search"></i> Buscar peças</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="container-site mt-20">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        @foreach (var d in new[]
+        {
+            (Icone: "badge-check", Titulo: "Código OEM idêntico", Texto: "O mesmo part number gravado na peça que vai para a montadora."),
+            (Icone: "scan-barcode", Titulo: "Lote rastreável", Texto: "Cada peça tem número de lote de fábrica informado no pedido."),
+            (Icone: "trending-down", Titulo: "Preço de fábrica", Texto: "Sem a margem de distribuidor e de concessionária."),
+            (Icone: "shield-check", Titulo: "Garantia do fabricante", Texto: "Prazo de garantia informado em cada item do catálogo.")
+        })
+        {
+            <div class="cartao p-6">
+                <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-laranja/10 text-laranja"><i data-lucide="@d.Icone" class="h-5 w-5"></i></span>
+                <h3 class="mt-4 text-xl font-bold text-white">@d.Titulo</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-tecnico">@d.Texto</p>
+            </div>
+        }
+    </div>
+</section>
+
+@if (Model.Destaques.Count > 0)
+{
+    <section class="container-site mt-24">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <h2 class="text-4xl font-extrabold uppercase text-white">Mais vendidas da fábrica</h2>
+                <p class="mt-2 text-tecnico">Compare o preço de concessionária com o preço direto da fábrica.</p>
+            </div>
+            <a asp-controller="Catalogo" asp-action="Index" class="btn-secundario">Ver catálogo completo</a>
+        </div>
+        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            @foreach (var peca in Model.Destaques)
+            {
+                <partial name="_PecaCard" model="peca" />
+            }
+        </div>
+    </section>
+}
+
+@if (Model.Fabricantes.Count > 0)
+{
+    <section class="container-site mt-24">
+        <h2 class="text-4xl font-extrabold uppercase text-white">Fábricas parceiras</h2>
+        <p class="mt-2 text-tecnico">Fornecedores que abastecem as linhas de montagem das montadoras.</p>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            @foreach (var f in Model.Fabricantes)
+            {
+                <a asp-controller="Catalogo" asp-action="Index" asp-route-FabricanteId="@f.Id" class="cartao-interativo flex items-start gap-4 p-5">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-carbon-800 text-laranja"><i data-lucide="factory" class="h-5 w-5"></i></span>
+                    <span class="min-w-0">
+                        <span class="block font-bold text-white">@f.Nome</span>
+                        <span class="block text-sm text-tecnico">@f.PaisOrigem · @Formatacao.Inteiro(f.TotalPecas) peças</span>
+                        @if (f.Homologado)
+                        {
+                            <span class="selo-laranja mt-2"><i data-lucide="badge-check"></i> @(f.CertificacaoISO ?? "Homologada")</span>
+                        }
+                    </span>
+                </a>
+            }
+        </div>
+    </section>
+}
+
+@if (Model.UltimasEntregas.Count > 0)
+{
+    <section class="container-site mt-24">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <h2 class="text-4xl font-extrabold uppercase text-white">Entregas recentes</h2>
+                <p class="mt-2 text-tecnico">Pedidos reais confirmados pela equipe, publicados com autorização do cliente.</p>
+            </div>
+            <a asp-controller="Historico" asp-action="Index" class="btn-secundario">Ver histórico completo</a>
+        </div>
+        <div class="mt-8 grid gap-6 lg:grid-cols-3">
+            @foreach (var entrega in Model.UltimasEntregas)
+            {
+                <partial name="_EntregaCard" model="entrega" />
+            }
+        </div>
+    </section>
+}
+
+<section class="container-site mt-24">
+    <div class="cartao relative overflow-hidden p-8 sm:p-12">
+        <div class="absolute inset-y-0 right-0 hidden w-1/3 opacity-20 md:block faixa-industrial" aria-hidden="true"></div>
+        <div class="relative max-w-2xl">
+            <h2 class="text-4xl font-extrabold uppercase text-white">Oficina ou frota?</h2>
+            <p class="mt-3 text-tecnico">Crie sua conta com CPF ou CNPJ e acompanhe cada pedido, do lote na fábrica até a entrega.</p>
+            <a asp-controller="Account" asp-action="Register" class="btn-primario btn-lg mt-6"><i data-lucide="user-plus"></i> Criar conta grátis</a>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,124 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model CatalogoIndexViewModel
+@{
+    ViewData["Title"] = "Catálogo de fábrica";
+    var f = Model.Filtro;
+    var r = Model.Resultado;
+
+    var montadoras = Model.Montadoras.Select(m => new SelectListItem(m, m, string.Equals(m, f.Montadora, StringComparison.OrdinalIgnoreCase)));
+    var modelos = Model.Modelos.Select(m => new SelectListItem(m, m, string.Equals(m, f.Modelo, StringComparison.OrdinalIgnoreCase)));
+    var anos = Model.Anos.Select(a => new SelectListItem(a.ToString(), a.ToString(), a == f.Ano));
+    var fabricantes = Model.Fabricantes.Select(x => new SelectListItem(x.Nome, x.Id.ToString(), x.Id == f.FabricanteId));
+    var categorias = Html.GetEnumSelectList<CategoriaPeca>()
+        .Select(c => new SelectListItem(c.Text, c.Value, f.Categoria.HasValue && c.Value == ((int)f.Categoria.Value).ToString()));
+    var ordenacoes = OrdenacaoCatalogo.Opcoes.Select(o => new SelectListItem(o.Nome, o.Valor, o.Valor == f.Ordenacao));
+}
+
+<section class="border-b border-white/[0.06] fundo-grade">
+    <div class="container-site py-12">
+        <h1 class="text-5xl font-extrabold uppercase text-white">Catálogo de fábrica</h1>
+        <p class="mt-2 max-w-2xl text-tecnico">Busque pelo código OEM gravado na peça, pelo veículo ou pela categoria. Todos os preços são direto da fábrica.</p>
+
+        <form asp-action="Index" method="get" class="mt-6 flex max-w-2xl gap-2" role="search">
+            @if (!string.IsNullOrEmpty(f.Montadora)) { <input type="hidden" name="Montadora" value="@f.Montadora" /> }
+            @if (!string.IsNullOrEmpty(f.Modelo)) { <input type="hidden" name="Modelo" value="@f.Modelo" /> }
+            <label for="c-termo" class="sr-only">Código OEM, peça ou veículo</label>
+            <div class="relative flex-1">
+                <i data-lucide="search" class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-tecnico"></i>
+                <input id="c-termo" name="Termo" value="@f.Termo" type="search" maxlength="80" class="campo py-3 pl-11 text-base" placeholder="Ex.: 04E115561H, pastilha, Onix 2020" />
+            </div>
+            <button type="submit" class="btn-primario">Buscar</button>
+        </form>
+    </div>
+</section>
+
+<div class="container-site mt-10 grid gap-8 lg:grid-cols-12">
+    <aside class="lg:col-span-3">
+        <form asp-action="Index" method="get" class="cartao space-y-5 p-5 lg:sticky lg:top-24" data-auto-submit>
+            <input type="hidden" name="Termo" value="@f.Termo" />
+            <input type="hidden" name="Ordenacao" value="@f.Ordenacao" />
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-white">Filtros</h2>
+                @if (f.TemFiltroAtivo)
+                {
+                    <a asp-action="Index" class="text-sm font-medium text-laranja hover:underline">Limpar</a>
+                }
+            </div>
+
+            <div>
+                <label for="f-montadora" class="rotulo">Montadora</label>
+                <select id="f-montadora" name="Montadora" class="campo" asp-items="montadoras" data-cascata-montadora="#f-modelo">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div>
+                <label for="f-modelo" class="rotulo">Modelo</label>
+                <select id="f-modelo" name="Modelo" class="campo" asp-items="modelos" data-cascata-modelo>
+                    <option value="">@(string.IsNullOrEmpty(f.Montadora) ? "Selecione a montadora" : "Todos os modelos")</option>
+                </select>
+            </div>
+            <div>
+                <label for="f-ano" class="rotulo">Ano do veículo</label>
+                <select id="f-ano" name="Ano" class="campo" asp-items="anos">
+                    <option value="">Qualquer ano</option>
+                </select>
+            </div>
+            <div>
+                <label for="f-categoria" class="rotulo">Categoria</label>
+                <select id="f-categoria" name="Categoria" class="campo" asp-items="categorias">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div>
+                <label for="f-fabricante" class="rotulo">Fabricante</label>
+                <select id="f-fabricante" name="FabricanteId" class="campo" asp-items="fabricantes">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <label class="flex items-center gap-2.5 text-sm text-white/90">
+                <input type="checkbox" name="SomenteDisponiveis" value="true" class="caixa-selecao" checked="@f.SomenteDisponiveis" />
+                Somente com estoque
+            </label>
+
+            <noscript><button type="submit" class="btn-primario w-full">Aplicar filtros</button></noscript>
+        </form>
+    </aside>
+
+    <section class="lg:col-span-9" aria-labelledby="resultado-titulo">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <h2 id="resultado-titulo" class="text-sm text-tecnico">
+                <strong class="font-display text-2xl text-white">@Formatacao.Inteiro(r.Total)</strong>
+                @(r.Total == 1 ? "peça encontrada" : "peças encontradas")
+            </h2>
+            <form asp-action="Index" method="get" class="flex items-center gap-2" data-auto-submit>
+                @foreach (var par in f.ParaRota().Where(p => p.Key != nameof(CatalogoFiltroViewModel.Ordenacao)))
+                {
+                    <input type="hidden" name="@par.Key" value="@par.Value" />
+                }
+                <label for="ordenacao" class="text-sm text-tecnico">Ordenar por</label>
+                <select id="ordenacao" name="Ordenacao" class="campo w-auto py-2" asp-items="ordenacoes"></select>
+                <noscript><button type="submit" class="btn-secundario btn-sm">Ok</button></noscript>
+            </form>
+        </div>
+
+        @if (r.Itens.Count == 0)
+        {
+            <div class="cartao flex flex-col items-center px-6 py-16 text-center">
+                <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-carbon-800 text-tecnico"><i data-lucide="search-x" class="h-7 w-7"></i></span>
+                <h3 class="mt-4 text-2xl font-bold text-white">Nenhuma peça encontrada</h3>
+                <p class="mt-1 max-w-md text-sm text-tecnico">Confira o código OEM (ele costuma estar gravado na própria peça ou na nota da concessionária) ou remova alguns filtros.</p>
+                <a asp-action="Index" class="btn-secundario mt-6">Ver todo o catálogo</a>
+            </div>
+        }
+        else
+        {
+            <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                @foreach (var peca in r.Itens)
+                {
+                    <partial name="_PecaCard" model="peca" />
+                }
+            </div>
+            <partial name="_Paginacao" model='new PaginacaoViewModel(r.Pagina, r.TotalPaginas, "Catalogo", "Index", f.ParaRota())' />
+        }
+    </section>
+</div>

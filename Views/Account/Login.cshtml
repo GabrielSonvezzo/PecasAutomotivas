@@ -1,0 +1,56 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Entrar";
+}
+<div class="container-site flex min-h-[calc(100vh-4.5rem)] items-center justify-center py-12">
+    <div class="w-full max-w-md">
+        <div class="cartao relative overflow-hidden p-8">
+            <div class="absolute inset-x-0 top-0 h-1.5 faixa-industrial" aria-hidden="true"></div>
+            <div class="flex justify-center">
+                <!-- INSERIR LOGO PEÇAS AUTOMOTIVAS AQUI -->
+                <partial name="_Logo" />
+            </div>
+            <h1 class="mt-8 text-center text-4xl font-extrabold uppercase text-white">Entrar</h1>
+            <p class="mt-1 text-center text-sm text-tecnico">Acompanhe seus pedidos e compre direto da fábrica.</p>
+
+            <form asp-action="Login" method="post" class="mt-8 space-y-5" novalidate>
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div>
+                    <label asp-for="Email" class="rotulo"></label>
+                    <input asp-for="Email" class="campo" autocomplete="username" inputmode="email" autofocus />
+                    <span asp-validation-for="Email"></span>
+                </div>
+                <div>
+                    <label asp-for="Senha" class="rotulo"></label>
+                    <div class="relative">
+                        <input asp-for="Senha" class="campo pr-11" autocomplete="current-password" />
+                        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-tecnico hover:text-white" data-alternar-senha="#Senha" aria-label="Mostrar senha">
+                            <i data-lucide="eye" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Senha"></span>
+                </div>
+                <label class="flex items-center gap-2.5 text-sm text-tecnico">
+                    <input asp-for="LembrarMe" class="caixa-selecao" />
+                    @Html.DisplayNameFor(m => m.LembrarMe)
+                </label>
+
+                <button type="submit" class="btn-primario btn-lg w-full"><i data-lucide="log-in"></i> Entrar</button>
+            </form>
+
+            <p class="mt-6 text-center text-sm text-tecnico">
+                Ainda não tem conta?
+                <a asp-action="Register" class="font-semibold text-laranja hover:underline">Criar conta grátis</a>
+            </p>
+        </div>
+        <p class="mt-4 flex items-center justify-center gap-2 text-xs text-tecnico">
+            <i data-lucide="lock" class="h-3.5 w-3.5"></i> Após 5 tentativas sem sucesso o acesso fica bloqueado por 15 minutos.
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

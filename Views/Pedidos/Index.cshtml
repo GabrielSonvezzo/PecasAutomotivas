@@ -1,0 +1,45 @@
+@model IReadOnlyList<PedidoResumoViewModel>
+@{
+    ViewData["Title"] = "Meus pedidos";
+}
+<div class="container-site py-10">
+    <h1 class="text-5xl font-extrabold uppercase text-white">Meus pedidos</h1>
+    <p class="mt-1 text-tecnico">Acompanhe cada pedido, da separação na fábrica até a entrega.</p>
+
+    @if (Model.Count == 0)
+    {
+        <div class="cartao mt-8 flex flex-col items-center px-6 py-16 text-center">
+            <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-carbon-800 text-tecnico"><i data-lucide="shopping-bag" class="h-7 w-7"></i></span>
+            <h2 class="mt-4 text-2xl font-bold text-white">Você ainda não fez pedidos</h2>
+            <p class="mt-1 text-sm text-tecnico">Encontre a peça pelo código OEM ou pelo seu veículo.</p>
+            <a asp-controller="Catalogo" asp-action="Index" class="btn-primario mt-6">Ir para o catálogo</a>
+        </div>
+    }
+    else
+    {
+        <div class="mt-8 space-y-4">
+            @foreach (var p in Model)
+            {
+                <a asp-action="Detalhes" asp-route-id="@p.Id" class="cartao-interativo flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+                    <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-carbon-800 text-laranja">
+                        <i data-lucide="@UiHelper.IconeStatusPedido(p.Status)" class="h-6 w-6"></i>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-display text-xl font-bold text-white">Pedido @Formatacao.NumeroPedido(p.Id)</span>
+                            <span class="selo @UiHelper.ClasseStatusPedido(p.Status)">@p.Status.NomeExibicao()</span>
+                        </div>
+                        <p class="mt-1 truncate text-sm text-tecnico">
+                            @(p.PrimeiraPeca + (p.QuantidadeItens > 1 ? $" · {p.QuantidadeItens} unidades" : "")) · feito em @Formatacao.Data(p.DataPedido)
+                        </p>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <p class="font-display text-2xl font-bold text-white">@Formatacao.Moeda(p.ValorTotal)</p>
+                        @if (p.Economia > 0) { <p class="text-xs text-emerald-300">economia de @Formatacao.Moeda(p.Economia)</p> }
+                    </div>
+                    <i data-lucide="chevron-right" class="hidden h-5 w-5 text-tecnico sm:block"></i>
+                </a>
+            }
+        </div>
+    }
+</div>

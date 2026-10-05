@@ -1,0 +1,38 @@
+@model PaginacaoViewModel
+@{
+    if (Model.TotalPaginas <= 1) { return; }
+
+    Dictionary<string, string> Rota(int pagina)
+    {
+        var r = new Dictionary<string, string>(Model.Rota) { ["pagina"] = pagina.ToString() };
+        return r;
+    }
+
+    var inicio = Math.Max(1, Model.Pagina - 2);
+    var fim = Math.Min(Model.TotalPaginas, Model.Pagina + 2);
+}
+<nav class="mt-10 flex items-center justify-center gap-1.5" aria-label="Paginação">
+    @if (Model.Pagina > 1)
+    {
+        <a class="btn-secundario btn-sm" asp-controller="@Model.Controller" asp-action="@Model.Action" asp-all-route-data="Rota(Model.Pagina - 1)" aria-label="Página anterior">
+            <i data-lucide="chevron-left"></i>
+        </a>
+    }
+    @for (var i = inicio; i <= fim; i++)
+    {
+        if (i == Model.Pagina)
+        {
+            <span class="btn btn-sm bg-laranja text-carbon-950" aria-current="page">@i</span>
+        }
+        else
+        {
+            <a class="btn-secundario btn-sm" asp-controller="@Model.Controller" asp-action="@Model.Action" asp-all-route-data="Rota(i)">@i</a>
+        }
+    }
+    @if (Model.Pagina < Model.TotalPaginas)
+    {
+        <a class="btn-secundario btn-sm" asp-controller="@Model.Controller" asp-action="@Model.Action" asp-all-route-data="Rota(Model.Pagina + 1)" aria-label="Próxima página">
+            <i data-lucide="chevron-right"></i>
+        </a>
+    }
+</nav>

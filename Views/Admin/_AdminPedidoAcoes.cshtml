@@ -1,0 +1,52 @@
+@model AdminPedidoLinhaViewModel
+@{
+    var retorno = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var aberto = Model.Status is StatusPedido.Pendente or StatusPedido.SeparacaoFabrica or StatusPedido.Enviado;
+    var proximo = Model.Status switch
+    {
+        StatusPedido.Pendente => StatusPedido.SeparacaoFabrica,
+        StatusPedido.SeparacaoFabrica => StatusPedido.Enviado,
+        _ => (StatusPedido?)null
+    };
+}
+@if (aberto)
+{
+    <div class="flex flex-wrap items-center justify-end gap-2">
+        @if (proximo is StatusPedido prox)
+        {
+            <form asp-controller="Admin" asp-action="AtualizarStatusPedido" method="post" class="flex items-center gap-2">
+                <input type="hidden" name="PedidoId" value="@Model.Id" />
+                <input type="hidden" name="NovoStatus" value="@prox" />
+                <input type="hidden" name="ReturnUrl" value="@retorno" />
+                @if (prox == StatusPedido.Enviado)
+                {
+                    <label for="rastreio-@Model.Id" class="sr-only">Código de rastreio</label>
+                    <input id="rastreio-@Model.Id" name="CodigoRastreio" maxlength="40" pattern="[A-Za-z0-9\-]*" class="campo w-36 py-1.5 text-xs" placeholder="Rastreio (opcional)" />
+                }
+                <button type="submit" class="btn-secundario btn-sm" title="Avançar para: @prox.NomeExibicao()">
+                    <i data-lucide="@UiHelper.IconeStatusPedido(prox)"></i> @prox.NomeExibicao()
+                </button>
+            </form>
+        }
+        <form asp-controller="Admin" asp-action="ConfirmarEntrega" asp-route-id="@Model.Id" method="post">
+            <input type="hidden" name="returnUrl" value="@retorno" />
+            <button type="submit" class="btn-primario btn-sm"
+                    data-confirm="Confirmar a entrega do pedido @Formatacao.NumeroPedido(Model.Id)? O estoque será baixado e a venda publicada no histórico (se o cliente autorizar).">
+                <i data-lucide="package-check"></i> Confirmar entrega / Marcar como vendido
+            </button>
+        </form>
+        <form asp-controller="Admin" asp-action="AtualizarStatusPedido" method="post">
+            <input type="hidden" name="PedidoId" value="@Model.Id" />
+            <input type="hidden" name="NovoStatus" value="@StatusPedido.Cancelado" />
+            <input type="hidden" name="ReturnUrl" value="@retorno" />
+            <button type="submit" class="btn-fantasma btn-sm" aria-label="Cancelar pedido" title="Cancelar pedido"
+                    data-confirm="Cancelar o pedido @Formatacao.NumeroPedido(Model.Id)? Esta ação não pode ser desfeita.">
+                <i data-lucide="x"></i>
+            </button>
+        </form>
+    </div>
+}
+else
+{
+    <p class="text-right text-xs text-tecnico">@(Model.Status == StatusPedido.Entregue ? $"Entregue em {Formatacao.Data(Model.DataEntrega)}" : "Encerrado")</p>
+}

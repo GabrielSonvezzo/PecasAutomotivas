@@ -1,0 +1,55 @@
+@model HistoricoViewModel
+@{
+    ViewData["Title"] = "Histórico de vendidos e entregas";
+    var e = Model.Estatisticas;
+    var r = Model.Entregas;
+}
+
+<section class="relative overflow-hidden border-b border-white/[0.06] fundo-grade">
+    <div class="container-site py-14">
+        <span class="selo-verde"><i data-lucide="package-check"></i> Entregas confirmadas pela equipe</span>
+        <h1 class="mt-4 text-5xl font-extrabold uppercase text-white">Peças já vendidas e lotes entregues</h1>
+        <p class="mt-2 max-w-2xl text-tecnico">
+            Cada registro abaixo é um pedido real, marcado como entregue pela equipe. Nome e depoimento aparecem apenas quando o cliente autorizou a publicação.
+        </p>
+
+        <dl class="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div class="cartao p-5"><dt class="kpi-rotulo">Pedidos entregues</dt><dd class="kpi-valor mt-2">@Formatacao.Inteiro(e.PedidosEntregues)</dd></div>
+            <div class="cartao p-5"><dt class="kpi-rotulo">Peças despachadas</dt><dd class="kpi-valor mt-2">@Formatacao.Inteiro(e.PecasDespachadas)</dd></div>
+            <div class="cartao p-5"><dt class="kpi-rotulo">Economia para clientes</dt><dd class="kpi-valor mt-2 text-laranja">@Formatacao.Moeda(e.EconomiaGerada)</dd></div>
+            <div class="cartao p-5">
+                <dt class="kpi-rotulo">Avaliação média</dt>
+                <dd class="mt-2 flex items-baseline gap-2">
+                    <span class="kpi-valor">@(e.TotalAvaliacoes > 0 ? Formatacao.Nota(e.MediaAvaliacao) : "—")</span>
+                    <span class="text-xs text-tecnico">@Formatacao.Inteiro(e.TotalAvaliacoes) avaliações</span>
+                </dd>
+            </div>
+        </dl>
+        @if (e.CidadesAtendidas > 0)
+        {
+            <p class="mt-4 text-sm text-tecnico">@Formatacao.Inteiro(e.CidadesAtendidas) cidades atendidas · @Formatacao.Inteiro(e.FabricantesAtendidos) fábricas de origem</p>
+        }
+    </div>
+</section>
+
+<div class="container-site mt-10">
+    @if (r.Itens.Count == 0)
+    {
+        <div class="cartao flex flex-col items-center px-6 py-16 text-center">
+            <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-carbon-800 text-tecnico"><i data-lucide="truck" class="h-7 w-7"></i></span>
+            <h2 class="mt-4 text-2xl font-bold text-white">As primeiras entregas aparecem aqui</h2>
+            <p class="mt-1 max-w-md text-sm text-tecnico">Assim que um pedido for confirmado como entregue, ele passa a fazer parte deste histórico.</p>
+            <a asp-controller="Catalogo" asp-action="Index" class="btn-primario mt-6">Ver catálogo</a>
+        </div>
+    }
+    else
+    {
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            @foreach (var entrega in r.Itens)
+            {
+                <partial name="_EntregaCard" model="entrega" />
+            }
+        </div>
+        <partial name="_Paginacao" model='new PaginacaoViewModel(r.Pagina, r.TotalPaginas, "Historico", "Index", new Dictionary<string, string>())' />
+    }
+</div>

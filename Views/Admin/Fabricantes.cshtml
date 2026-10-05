@@ -1,0 +1,50 @@
+@model IReadOnlyList<AdminFabricanteLinhaViewModel>
+@{
+    ViewData["Title"] = "Fábricas";
+}
+<div class="container-site flex flex-col gap-8 py-10 lg:flex-row">
+    <partial name="_AdminNav" />
+
+    <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <h1 class="text-5xl font-extrabold uppercase text-white">Fábricas</h1>
+                <p class="mt-1 text-tecnico">Fornecedores de origem das peças do catálogo.</p>
+            </div>
+            <a asp-action="NovoFabricante" class="btn-primario"><i data-lucide="plus"></i> Nova fábrica</a>
+        </div>
+
+        <div class="cartao mt-6 overflow-x-auto">
+            <table class="tabela">
+                <thead><tr><th>Fábrica</th><th>País</th><th>Certificação</th><th>Selo</th><th class="text-right">Peças</th><th class="text-right">Ações</th></tr></thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr><td colspan="6" class="py-10 text-center text-tecnico">Nenhuma fábrica cadastrada.</td></tr>
+                    }
+                    @foreach (var f in Model)
+                    {
+                        <tr>
+                            <td class="font-semibold text-white">@f.NomeFabrica</td>
+                            <td class="text-tecnico">@f.PaisOrigem</td>
+                            <td class="text-tecnico">@(f.CertificacaoISO ?? "—")</td>
+                            <td>@if (f.SeloHomologado) { <span class="selo-laranja"><i data-lucide="badge-check"></i> Homologada</span> } else { <span class="selo-neutro">Sem selo</span> }</td>
+                            <td class="text-right">
+                                <a asp-controller="Catalogo" asp-action="Index" asp-route-FabricanteId="@f.Id" class="hover:text-laranja">@Formatacao.Inteiro(f.TotalPecas)</a>
+                            </td>
+                            <td>
+                                <div class="flex justify-end gap-1">
+                                    <a asp-action="EditarFabricante" asp-route-id="@f.Id" class="btn-fantasma btn-sm" aria-label="Editar" title="Editar"><i data-lucide="pencil"></i></a>
+                                    <form asp-action="ExcluirFabricante" asp-route-id="@f.Id" method="post">
+                                        <button type="submit" class="btn-fantasma btn-sm hover:text-red-300" aria-label="Excluir" title="Excluir"
+                                                data-confirm="Excluir a fábrica &quot;@f.NomeFabrica&quot;?"><i data-lucide="trash-2"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

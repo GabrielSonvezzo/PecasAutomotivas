@@ -1,0 +1,133 @@
+@model PedidoDetalhesViewModel
+@{
+    ViewData["Title"] = $"Pedido {Formatacao.NumeroPedido(Model.Id)}";
+    var etapas = new[] { StatusPedido.Pendente, StatusPedido.SeparacaoFabrica, StatusPedido.Enviado, StatusPedido.Entregue };
+    var indiceAtual = Array.IndexOf(etapas, Model.Status);
+    var subtotalConcessionaria = Model.Itens.Sum(i => i.PrecoConcessionariaUnitario * i.Quantidade);
+}
+
+<div class="container-site py-10">
+    <a asp-action="Index" class="inline-flex items-center gap-1.5 text-sm text-tecnico hover:text-white"><i data-lucide="arrow-left" class="h-4 w-4"></i> Meus pedidos</a>
+
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+        <h1 class="text-5xl font-extrabold uppercase text-white">Pedido @Formatacao.NumeroPedido(Model.Id)</h1>
+        <span class="selo @UiHelper.ClasseStatusPedido(Model.Status)"><i data-lucide="@UiHelper.IconeStatusPedido(Model.Status)"></i> @Model.Status.NomeExibicao()</span>
+    </div>
+    <p class="mt-1 text-tecnico">Feito em @Formatacao.DataHora(Model.DataPedido) · entrega em @Model.Cidade / @Model.Estado</p>
+
+    @if (Model.Status == StatusPedido.Cancelado)
+    {
+        <p class="alerta-erro mt-8"><i data-lucide="x-circle"></i> Este pedido foi cancelado. Se tiver dúvidas, fale com o atendimento.</p>
+    }
+    else
+    {
+        <ol class="cartao mt-8 grid gap-6 p-6 sm:grid-cols-4" aria-label="Andamento do pedido">
+            @for (var i = 0; i < etapas.Length; i++)
+            {
+                var concluida = i <= indiceAtual;
+                var atual = i == indiceAtual;
+                <li class="flex items-center gap-3 sm:flex-col sm:items-start" aria-current="@(atual ? "step" : null)">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full @(concluida ? "bg-laranja text-carbon-950" : "bg-carbon-800 text-tecnico")">
+                        <i data-lucide="@UiHelper.IconeStatusPedido(etapas[i])" class="h-5 w-5"></i>
+                    </span>
+                    <span>
+                        <span class="block font-semibold @(concluida ? "text-white" : "text-tecnico")">@etapas[i].NomeExibicao()</span>
+                        @if (etapas[i] == StatusPedido.Enviado && !string.IsNullOrEmpty(Model.CodigoRastreio))
+                        {
+                            <span class="block text-xs text-tecnico">Rastreio: <strong class="text-white">@Model.CodigoRastreio</strong></span>
+                        }
+                        @if (etapas[i] == StatusPedido.Entregue && Model.DataEntrega.HasValue)
+                        {
+                            <span class="block text-xs text-tecnico">@Formatacao.Data(Model.DataEntrega)</span>
+                        }
+                    </span>
+                </li>
+            }
+        </ol>
+    }
+
+    <div class="mt-8 grid gap-8 lg:grid-cols-12">
+        <section class="cartao overflow-hidden lg:col-span-8">
+            <h2 class="px-6 pt-6 text-2xl font-bold text-white">Itens</h2>
+            <div class="mt-4 overflow-x-auto">
+                <table class="tabela">
+                    <thead>
+                        <tr><th>Peça</th><th>Lote</th><th class="text-right">Qtd.</th><th class="text-right">Unitário</th><th class="text-right">Subtotal</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Itens)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Catalogo" asp-action="Detalhes" asp-route-id="@item.PecaId" class="font-semibold text-white hover:text-laranja">@item.Nome</a>
+                                    <span class="block text-xs text-tecnico">OEM @item.CodigoOEM · @item.Fabricante</span>
+                                </td>
+                                <td class="text-tecnico">@(item.NumeroLote ?? "—")</td>
+                                <td class="text-right">@item.Quantidade</td>
+                                <td class="text-right">
+                                    <span class="block">@Formatacao.Moeda(item.PrecoUnitario)</span>
+                                    <span class="preco-riscado text-xs">@Formatacao.Moeda(item.PrecoConcessionariaUnitario)</span>
+                                </td>
+                                <td class="text-right font-semibold text-white">@Formatacao.Moeda(item.Subtotal)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <aside class="space-y-6 lg:col-span-4">
+            <div class="cartao p-6">
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between"><dt class="text-tecnico">Na concessionária</dt><dd class="preco-riscado">@Formatacao.Moeda(subtotalConcessionaria)</dd></div>
+                    <div class="flex justify-between text-emerald-300"><dt>Economia</dt><dd class="font-semibold">@Formatacao.Moeda(Model.Economia)</dd></div>
+                    <div class="flex items-end justify-between border-t border-white/[0.06] pt-3"><dt class="font-semibold text-white">Total</dt><dd class="preco-fabrica text-3xl">@Formatacao.Moeda(Model.ValorTotal)</dd></div>
+                </dl>
+                @if (!string.IsNullOrEmpty(Model.VeiculoAplicado))
+                {
+                    <p class="mt-4 flex items-center gap-2 text-sm text-tecnico"><i data-lucide="car" class="h-4 w-4"></i> @Model.VeiculoAplicado</p>
+                }
+            </div>
+
+            @if (Model.PodeAvaliar)
+            {
+                <form asp-action="Avaliar" method="post" class="cartao space-y-4 p-6">
+                    <input type="hidden" name="PedidoId" value="@Model.Id" />
+                    <h2 class="text-2xl font-bold text-white">Avalie a compra</h2>
+                    <fieldset>
+                        <legend class="rotulo">Sua nota</legend>
+                        <div class="seletor-nota">
+                            @for (var n = 5; n >= 1; n--)
+                            {
+                                <input type="radio" id="nota-@n" name="Nota" value="@n" required />
+                                <label for="nota-@n" aria-label="@n de 5"><i data-lucide="star"></i></label>
+                            }
+                        </div>
+                    </fieldset>
+                    <div>
+                        <label for="Depoimento" class="rotulo">Conte como foi a compra</label>
+                        <textarea id="Depoimento" name="Depoimento" rows="4" maxlength="1000" class="campo" placeholder="A peça chegou certinha? O código OEM bateu?"></textarea>
+                        <p class="ajuda">Opcional, de 10 a 1000 caracteres.</p>
+                    </div>
+                    <label class="flex items-start gap-2.5 text-sm text-tecnico">
+                        <input type="checkbox" name="AutorizaPublicacao" value="true" class="caixa-selecao mt-0.5" />
+                        <span>Autorizo exibir meu primeiro nome, cidade e depoimento no histórico público de entregas.</span>
+                    </label>
+                    <input type="hidden" name="AutorizaPublicacao" value="false" />
+                    <button type="submit" class="btn-primario w-full"><i data-lucide="send"></i> Enviar avaliação</button>
+                </form>
+            }
+            else if (Model.Nota is int nota)
+            {
+                <div class="cartao p-6">
+                    <h2 class="text-xl font-bold text-white">Sua avaliação</h2>
+                    <div class="estrelas mt-2" role="img" aria-label="Nota @nota de 5">
+                        @for (var i = 1; i <= 5; i++) { <i data-lucide="star" class="@(i <= nota ? "estrela-cheia" : "estrela-vazia")"></i> }
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Depoimento)) { <p class="mt-3 text-sm text-white/85">“@Model.Depoimento”</p> }
+                    <p class="ajuda mt-3">@(Model.AutorizaPublicacao ? "Publicada no histórico público." : "Visível apenas para a equipe.")</p>
+                </div>
+            }
+        </aside>
+    </div>
+</div>

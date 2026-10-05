@@ -1,0 +1,81 @@
+@model AdminPecasViewModel
+@{
+    ViewData["Title"] = "Peças e estoque";
+    var r = Model.Resultado;
+    var rota = string.IsNullOrWhiteSpace(Model.Termo) ? new Dictionary<string, string>() : new Dictionary<string, string> { ["termo"] = Model.Termo! };
+}
+<div class="container-site flex flex-col gap-8 py-10 lg:flex-row">
+    <partial name="_AdminNav" />
+
+    <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <h1 class="text-5xl font-extrabold uppercase text-white">Peças e estoque</h1>
+                <p class="mt-1 text-tecnico">@Formatacao.Inteiro(r.Total) peças cadastradas.</p>
+            </div>
+            <a asp-action="NovaPeca" class="btn-primario"><i data-lucide="plus"></i> Nova peça</a>
+        </div>
+
+        <form asp-action="Pecas" method="get" class="mt-6 flex max-w-lg gap-2" role="search">
+            <label for="termo" class="sr-only">Buscar</label>
+            <input id="termo" name="termo" value="@Model.Termo" type="search" maxlength="80" class="campo" placeholder="Nome, código OEM ou SKU" />
+            <button type="submit" class="btn-secundario"><i data-lucide="search"></i> Buscar</button>
+        </form>
+
+        <div class="cartao mt-6 overflow-x-auto">
+            <table class="tabela">
+                <thead>
+                    <tr><th>Peça</th><th>Fabricante</th><th class="text-right">Fábrica</th><th class="text-right">Concessionária</th><th class="text-right">Estoque</th><th class="text-right">Vendidos</th><th class="text-right">Ações</th></tr>
+                </thead>
+                <tbody>
+                    @if (r.Itens.Count == 0)
+                    {
+                        <tr><td colspan="7" class="py-10 text-center text-tecnico">Nenhuma peça encontrada.</td></tr>
+                    }
+                    @foreach (var p in r.Itens)
+                    {
+                        <tr>
+                            <td>
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-carbon-800 text-carbon-600">
+                                        @if (!string.IsNullOrEmpty(p.ImagemUrl))
+                                        {
+                                            <img src="@Url.Content(p.ImagemUrl)" alt="" class="h-full w-full object-cover" loading="lazy" />
+                                        }
+                                        else
+                                        {
+                                            <i data-lucide="@UiHelper.IconeCategoria(p.Categoria)" class="h-5 w-5"></i>
+                                        }
+                                    </span>
+                                    <span class="min-w-0">
+                                        <a asp-action="EditarPeca" asp-route-id="@p.Id" class="font-semibold text-white hover:text-laranja">@p.Nome</a>
+                                        <span class="block text-xs text-tecnico">OEM @p.CodigoOEM · @p.Categoria.NomeExibicao() · lote @(p.NumeroLote ?? "—")</span>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap text-tecnico">@p.Fabricante</td>
+                            <td class="whitespace-nowrap text-right font-semibold text-laranja">@Formatacao.Moeda(p.PrecoFabrica)</td>
+                            <td class="whitespace-nowrap text-right text-tecnico">@Formatacao.Moeda(p.PrecoConcessionaria)</td>
+                            <td class="text-right">
+                                @if (p.Estoque == 0) { <span class="selo-vermelho">Esgotado</span> }
+                                else { <span class="@(p.Estoque <= 5 ? "text-laranja font-semibold" : "text-white")">@Formatacao.Inteiro(p.Estoque)</span> }
+                            </td>
+                            <td class="text-right text-tecnico">@Formatacao.Inteiro(p.Vendidos)</td>
+                            <td>
+                                <div class="flex justify-end gap-1">
+                                    <a asp-controller="Catalogo" asp-action="Detalhes" asp-route-id="@p.Id" class="btn-fantasma btn-sm" title="Ver no catálogo" aria-label="Ver no catálogo"><i data-lucide="external-link"></i></a>
+                                    <a asp-action="EditarPeca" asp-route-id="@p.Id" class="btn-fantasma btn-sm" title="Editar" aria-label="Editar"><i data-lucide="pencil"></i></a>
+                                    <form asp-action="ExcluirPeca" asp-route-id="@p.Id" method="post">
+                                        <button type="submit" class="btn-fantasma btn-sm hover:text-red-300" title="Excluir" aria-label="Excluir"
+                                                data-confirm="Excluir a peça &quot;@p.Nome&quot;? Esta ação não pode ser desfeita."><i data-lucide="trash-2"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Paginacao" model='new PaginacaoViewModel(r.Pagina, r.TotalPaginas, "Admin", "Pecas", rota)' />
+    </div>
+</div>

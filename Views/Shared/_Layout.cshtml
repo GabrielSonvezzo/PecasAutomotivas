@@ -1,0 +1,162 @@
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var logado = SignInManager.IsSignedIn(User);
+    var admin = logado && User.IsInRole(Roles.Admin);
+    var titulo = ViewData["Title"] as string;
+    string Nav(string c) => string.Equals(controller, c, StringComparison.OrdinalIgnoreCase) ? "link-nav link-nav-ativo" : "link-nav";
+    var usuarioAtual = logado ? await UserManager.GetUserAsync(User) : null;
+    var primeiroNome = (usuarioAtual?.NomeCompleto ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "cliente";
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@(string.IsNullOrEmpty(titulo) ? "PEÇAS AUTOMOTIVAS — Peças Originais Direto da Fábrica" : $"{titulo} | PEÇAS AUTOMOTIVAS")</title>
+    <meta name="description" content="@(ViewData["Descricao"] as string ?? "Peças automotivas 100% originais, com código OEM e lote certificado, vendidas direto das linhas de montagem — sem intermediários.")" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="manifest" href="~/manifest.json" />
+    <link rel="icon" href="~/images/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="~/images/icons/apple-touch-icon.png" />
+    <link rel="preload" href="~/fonts/barlow-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="~/fonts/barlow-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="flex min-h-screen flex-col">
+    <a href="#conteudo" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-laranja focus:px-4 focus:py-2 focus:text-carbon-950">Pular para o conteúdo</a>
+
+    <header class="vidro fixed inset-x-0 top-0 z-50">
+        <div class="container-site flex h-[4.5rem] items-center gap-4">
+            <a asp-controller="Home" asp-action="Index" class="shrink-0" aria-label="PEÇAS AUTOMOTIVAS — página inicial">
+                <!-- INSERIR LOGO PEÇAS AUTOMOTIVAS AQUI -->
+                <partial name="_Logo" />
+            </a>
+
+            <form asp-controller="Catalogo" asp-action="BuscaRapida" method="get" role="search" class="ml-4 hidden max-w-sm flex-1 md:block">
+                <label for="busca-topo" class="sr-only">Buscar por código OEM ou veículo</label>
+                <div class="relative">
+                    <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-tecnico"></i>
+                    <input id="busca-topo" name="q" type="search" maxlength="80" autocomplete="off"
+                           placeholder="Código OEM, peça ou veículo" class="campo rounded-full bg-carbon-900/80 py-2 pl-9" />
+                </div>
+            </form>
+
+            <nav class="ml-auto hidden items-center gap-0.5 lg:flex" aria-label="Menu principal">
+                <a asp-controller="Home" asp-action="Index" class="@Nav("Home")">Início</a>
+                <a asp-controller="Catalogo" asp-action="Index" class="@Nav("Catalogo")">Catálogo de fábrica</a>
+                <a asp-controller="Historico" asp-action="Index" class="@Nav("Historico")">Vendidos e entregues</a>
+                @if (logado)
+                {
+                    <a asp-controller="Pedidos" asp-action="Index" class="@Nav("Pedidos")">Meus pedidos</a>
+                }
+                @if (admin)
+                {
+                    <a asp-controller="Admin" asp-action="Dashboard" class="@Nav("Admin") inline-flex items-center gap-1.5">
+                        <i data-lucide="shield" class="h-4 w-4 text-laranja"></i> Painel admin
+                    </a>
+                }
+            </nav>
+
+            <div class="ml-auto flex items-center gap-2 lg:ml-2">
+                @if (logado)
+                {
+                    <span class="hidden text-sm text-tecnico xl:inline">Olá, <strong class="text-white">@primeiroNome</strong></span>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="hidden lg:block">
+                        <button type="submit" class="btn-fantasma btn-sm" aria-label="Sair"><i data-lucide="log-out"></i> Sair</button>
+                    </form>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="btn-fantasma btn-sm hidden sm:inline-flex">Entrar</a>
+                    <a asp-controller="Account" asp-action="Register" class="btn-primario btn-sm hidden sm:inline-flex">Criar conta</a>
+                }
+                <button type="button" class="btn-secundario btn-sm lg:hidden" data-menu-alternar aria-controls="menu-movel" aria-expanded="false" aria-label="Abrir menu">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="menu-movel" class="hidden border-t border-white/[0.06] bg-carbon-950 lg:hidden" data-menu-movel>
+            <div class="container-site space-y-1 py-4">
+                <form asp-controller="Catalogo" asp-action="BuscaRapida" method="get" role="search" class="mb-3">
+                    <label for="busca-movel" class="sr-only">Buscar por código OEM ou veículo</label>
+                    <input id="busca-movel" name="q" type="search" maxlength="80" placeholder="Código OEM, peça ou veículo" class="campo" />
+                </form>
+                <a asp-controller="Home" asp-action="Index" class="block @Nav("Home")">Início</a>
+                <a asp-controller="Catalogo" asp-action="Index" class="block @Nav("Catalogo")">Catálogo de fábrica</a>
+                <a asp-controller="Historico" asp-action="Index" class="block @Nav("Historico")">Histórico de vendidos e entregas</a>
+                @if (logado)
+                {
+                    <a asp-controller="Pedidos" asp-action="Index" class="block @Nav("Pedidos")">Meus pedidos</a>
+                }
+                @if (admin)
+                {
+                    <a asp-controller="Admin" asp-action="Dashboard" class="block @Nav("Admin")">Painel admin</a>
+                }
+                <div class="flex gap-2 border-t border-white/[0.06] pt-3">
+                    @if (logado)
+                    {
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="w-full">
+                            <button type="submit" class="btn-secundario w-full"><i data-lucide="log-out"></i> Sair</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn-secundario flex-1">Entrar</a>
+                        <a asp-controller="Account" asp-action="Register" class="btn-primario flex-1">Criar conta</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="conteudo" class="flex-1 pt-[4.5rem]">
+        <partial name="_Alertas" />
+        @RenderBody()
+    </main>
+
+    <footer class="mt-24 border-t border-white/[0.06] bg-carbon-900">
+        <div class="h-1.5 faixa-industrial" aria-hidden="true"></div>
+        <div class="container-site grid gap-10 py-14 md:grid-cols-4">
+            <div class="md:col-span-2">
+                <!-- INSERIR LOGO PEÇAS AUTOMOTIVAS AQUI -->
+                <partial name="_Logo" />
+                <p class="mt-4 max-w-md text-sm leading-relaxed text-tecnico">
+                    Peças originais com código OEM e número de lote rastreável, compradas direto das fábricas que abastecem as montadoras.
+                    Sem distribuidor, sem concessionária no meio.
+                </p>
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-white">Navegação</h2>
+                <ul class="mt-4 space-y-2 text-sm text-tecnico">
+                    <li><a asp-controller="Catalogo" asp-action="Index" class="hover:text-laranja">Catálogo de fábrica</a></li>
+                    <li><a asp-controller="Historico" asp-action="Index" class="hover:text-laranja">Vendidos e entregues</a></li>
+                    <li><a asp-controller="Pedidos" asp-action="Index" class="hover:text-laranja">Meus pedidos</a></li>
+                </ul>
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-white">Garantias</h2>
+                <ul class="mt-4 space-y-2 text-sm text-tecnico">
+                    <li class="flex items-center gap-2"><i data-lucide="badge-check" class="h-4 w-4 text-laranja"></i> Código OEM conferido</li>
+                    <li class="flex items-center gap-2"><i data-lucide="scan-barcode" class="h-4 w-4 text-laranja"></i> Lote rastreável</li>
+                    <li class="flex items-center gap-2"><i data-lucide="shield-check" class="h-4 w-4 text-laranja"></i> Garantia de fábrica</li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-white/[0.06]">
+            <div class="container-site flex flex-col gap-2 py-6 text-xs text-tecnico sm:flex-row sm:justify-between">
+                <p>© @DateTime.UtcNow.Year PEÇAS AUTOMOTIVAS. Todos os direitos reservados.</p>
+                <p>Preços de concessionária são referências de tabela e podem variar por região.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/lucide/lucide.min.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+@model AdminPedidosViewModel
+@{
+    ViewData["Title"] = "Pedidos";
+    var r = Model.Resultado;
+    var rota = Model.Status is StatusPedido s ? new Dictionary<string, string> { ["status"] = s.ToString() } : new Dictionary<string, string>();
+    var filtros = new StatusPedido?[] { null, StatusPedido.Pendente, StatusPedido.SeparacaoFabrica, StatusPedido.Enviado, StatusPedido.Entregue, StatusPedido.Cancelado };
+}
+<div class="container-site flex flex-col gap-8 py-10 lg:flex-row">
+    <partial name="_AdminNav" />
+
+    <div class="min-w-0 flex-1">
+        <h1 class="text-5xl font-extrabold uppercase text-white">Pedidos</h1>
+        <p class="mt-1 text-tecnico">@(Formatacao.Inteiro(r.Total) + " pedidos" + (Model.Status is StatusPedido st ? $" com status {st.NomeExibicao().ToLowerInvariant()}" : "")).</p>
+
+        <nav class="mt-6 flex flex-wrap gap-2" aria-label="Filtrar por status">
+            @foreach (var f in filtros)
+            {
+                var ativo = f == Model.Status;
+                <a asp-action="Pedidos" asp-route-status="@f?.ToString()" class="btn btn-sm @(ativo ? "bg-laranja text-carbon-950" : "border border-white/10 bg-carbon-900 text-tecnico hover:text-white")"
+                   aria-current="@(ativo ? "page" : null)">@(f?.NomeExibicao() ?? "Todos")</a>
+            }
+        </nav>
+
+        <div class="cartao mt-6 overflow-x-auto">
+            <table class="tabela">
+                <thead><tr><th>Pedido</th><th>Cliente</th><th>Destino / veículo</th><th class="text-right">Valor</th><th>Status</th><th class="text-right">Ações</th></tr></thead>
+                <tbody>
+                    @if (r.Itens.Count == 0)
+                    {
+                        <tr><td colspan="6" class="py-10 text-center text-tecnico">Nenhum pedido encontrado.</td></tr>
+                    }
+                    @foreach (var p in r.Itens)
+                    {
+                        <tr>
+                            <td>
+                                <span class="font-semibold text-white">@Formatacao.NumeroPedido(p.Id)</span>
+                                <span class="block text-xs text-tecnico">@Formatacao.DataHora(p.DataPedido)</span>
+                                @if (!string.IsNullOrEmpty(p.CodigoRastreio)) { <span class="block text-xs text-tecnico">Rastreio @p.CodigoRastreio</span> }
+                            </td>
+                            <td>
+                                <span class="block text-white">@p.Cliente</span>
+                                <span class="block text-xs text-tecnico">@p.Email</span>
+                            </td>
+                            <td class="text-tecnico">
+                                <span class="block whitespace-nowrap">@p.Cidade / @p.Estado</span>
+                                @if (!string.IsNullOrEmpty(p.Veiculo)) { <span class="block text-xs">@p.Veiculo</span> }
+                            </td>
+                            <td class="whitespace-nowrap text-right">
+                                <span class="font-semibold text-white">@Formatacao.Moeda(p.ValorTotal)</span>
+                                <span class="block text-xs text-tecnico">@p.QuantidadeItens un.</span>
+                            </td>
+                            <td><span class="selo whitespace-nowrap @UiHelper.ClasseStatusPedido(p.Status)">@p.Status.NomeExibicao()</span></td>
+                            <td><partial name="_AdminPedidoAcoes" model="p" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Paginacao" model='new PaginacaoViewModel(r.Pagina, r.TotalPaginas, "Admin", "Pedidos", rota)' />
+    </div>
+</div>

@@ -1,0 +1,29 @@
+@{
+    var sucesso = TempData["Sucesso"] as string;
+    var erro = TempData["Erro"] as string;
+}
+@if (!string.IsNullOrEmpty(sucesso) || !string.IsNullOrEmpty(erro))
+{
+    <div class="container-site mt-6 space-y-3" role="status" aria-live="polite">
+        @if (!string.IsNullOrEmpty(sucesso))
+        {
+            <div class="alerta-sucesso" data-alerta>
+                <i data-lucide="circle-check"></i>
+                <p class="flex-1">@sucesso</p>
+                <button type="button" class="text-emerald-200/70 hover:text-white" data-fechar-alerta aria-label="Fechar aviso">
+                    <i data-lucide="x" class="h-4 w-4"></i>
+                </button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(erro))
+        {
+            <div class="alerta-erro" data-alerta>
+                <i data-lucide="triangle-alert"></i>
+                <p class="flex-1">@erro</p>
+                <button type="button" class="text-red-200/70 hover:text-white" data-fechar-alerta aria-label="Fechar aviso">
+                    <i data-lucide="x" class="h-4 w-4"></i>
+                </button>
+            </div>
+        }
+    </div>
+}

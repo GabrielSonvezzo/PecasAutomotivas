@@ -1,0 +1,155 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model PecaFormViewModel
+@{
+    ViewData["Title"] = Model.Edicao ? $"Editar peça — {Model.Nome}" : "Nova peça";
+    var fabricantes = Model.Fabricantes.Select(f => new SelectListItem(f.Nome, f.Id.ToString()));
+    var acao = Model.Edicao ? "EditarPeca" : "NovaPeca";
+}
+<div class="container-site flex flex-col gap-8 py-10 lg:flex-row">
+    <partial name="_AdminNav" />
+
+    <div class="min-w-0 flex-1">
+        <a asp-action="Pecas" class="inline-flex items-center gap-1.5 text-sm text-tecnico hover:text-white"><i data-lucide="arrow-left" class="h-4 w-4"></i> Peças</a>
+        <h1 class="mt-3 text-5xl font-extrabold uppercase text-white">@(Model.Edicao ? "Editar peça" : "Nova peça")</h1>
+
+        <form asp-action="@acao" asp-route-id="@(Model.Edicao ? Model.Id.ToString() : null)" method="post" enctype="multipart/form-data" class="mt-8 grid gap-8 xl:grid-cols-3" novalidate>
+            <input type="hidden" asp-for="Id" />
+
+            <div class="space-y-6 xl:col-span-2">
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <fieldset class="cartao space-y-5 p-6">
+                    <legend class="sr-only">Identificação</legend>
+                    <h2 class="text-2xl font-bold text-white">Identificação</h2>
+                    <div>
+                        <label asp-for="Nome" class="rotulo"></label>
+                        <input asp-for="Nome" class="campo" />
+                        <span asp-validation-for="Nome"></span>
+                    </div>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div>
+                            <label asp-for="CodigoOEM_PartNumber" class="rotulo"></label>
+                            <input asp-for="CodigoOEM_PartNumber" class="campo uppercase" />
+                            <span asp-validation-for="CodigoOEM_PartNumber"></span>
+                        </div>
+                        <div>
+                            <label asp-for="SKU_Fabrica" class="rotulo"></label>
+                            <input asp-for="SKU_Fabrica" class="campo uppercase" />
+                            <span asp-validation-for="SKU_Fabrica"></span>
+                        </div>
+                        <div>
+                            <label asp-for="Categoria" class="rotulo"></label>
+                            <select asp-for="Categoria" asp-items="Html.GetEnumSelectList<CategoriaPeca>()" class="campo">
+                                <option value="">Selecione</option>
+                            </select>
+                            <span asp-validation-for="Categoria"></span>
+                        </div>
+                        <div>
+                            <label asp-for="FabricanteFabricaId" class="rotulo"></label>
+                            <select asp-for="FabricanteFabricaId" asp-items="fabricantes" class="campo">
+                                <option value="">Selecione</option>
+                            </select>
+                            <span asp-validation-for="FabricanteFabricaId"></span>
+                            @if (Model.Fabricantes.Count == 0) { <p class="ajuda">Cadastre uma <a asp-action="NovoFabricante" class="text-laranja underline">fábrica</a> primeiro.</p> }
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="cartao space-y-5 p-6">
+                    <legend class="sr-only">Compatibilidade</legend>
+                    <h2 class="text-2xl font-bold text-white">Compatibilidade</h2>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div>
+                            <label asp-for="MontadoraCompativel" class="rotulo"></label>
+                            <input asp-for="MontadoraCompativel" class="campo" placeholder="Ex.: Volkswagen" />
+                            <span asp-validation-for="MontadoraCompativel"></span>
+                        </div>
+                        <div>
+                            <label asp-for="ModeloVeiculoCompativel" class="rotulo"></label>
+                            <input asp-for="ModeloVeiculoCompativel" class="campo" placeholder="Ex.: Polo" />
+                            <span asp-validation-for="ModeloVeiculoCompativel"></span>
+                        </div>
+                    </div>
+                    <div class="grid gap-5 sm:grid-cols-3">
+                        <div>
+                            <label asp-for="AnoInicial" class="rotulo"></label>
+                            <input asp-for="AnoInicial" type="number" min="1950" max="2100" class="campo" />
+                            <span asp-validation-for="AnoInicial"></span>
+                        </div>
+                        <div>
+                            <label asp-for="AnoFinal" class="rotulo"></label>
+                            <input asp-for="AnoFinal" type="number" min="1950" max="2100" class="campo" />
+                            <span asp-validation-for="AnoFinal"></span>
+                        </div>
+                        <div>
+                            <label asp-for="Motorizacao" class="rotulo"></label>
+                            <input asp-for="Motorizacao" class="campo" placeholder="Ex.: 1.0 TSI" />
+                            <span asp-validation-for="Motorizacao"></span>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="cartao space-y-5 p-6">
+                    <legend class="sr-only">Preço e estoque</legend>
+                    <h2 class="text-2xl font-bold text-white">Preço, estoque e lote</h2>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div>
+                            <label asp-for="PrecoTabelaConcessionaria" class="rotulo"></label>
+                            <input asp-for="PrecoTabelaConcessionaria" type="number" step="0.01" min="0.01" class="campo" data-preco-concessionaria-campo />
+                            <span asp-validation-for="PrecoTabelaConcessionaria"></span>
+                        </div>
+                        <div>
+                            <label asp-for="PrecoDiretoFabrica" class="rotulo"></label>
+                            <input asp-for="PrecoDiretoFabrica" type="number" step="0.01" min="0.01" class="campo" data-preco-fabrica-campo />
+                            <span asp-validation-for="PrecoDiretoFabrica"></span>
+                            <p class="ajuda text-emerald-300" data-economia-previa></p>
+                        </div>
+                        <div>
+                            <label asp-for="QuantidadeEstoque" class="rotulo"></label>
+                            <input asp-for="QuantidadeEstoque" type="number" min="0" class="campo" />
+                            <span asp-validation-for="QuantidadeEstoque"></span>
+                        </div>
+                        <div>
+                            <label asp-for="NumeroLoteFabrica" class="rotulo"></label>
+                            <input asp-for="NumeroLoteFabrica" class="campo uppercase" />
+                            <span asp-validation-for="NumeroLoteFabrica"></span>
+                        </div>
+                        <div>
+                            <label asp-for="GarantiaMeses" class="rotulo"></label>
+                            <input asp-for="GarantiaMeses" type="number" min="0" max="120" class="campo" />
+                            <span asp-validation-for="GarantiaMeses"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <label asp-for="DescricaoTecnica" class="rotulo"></label>
+                        <textarea asp-for="DescricaoTecnica" rows="6" class="campo"></textarea>
+                        <span asp-validation-for="DescricaoTecnica"></span>
+                    </div>
+                </fieldset>
+            </div>
+
+            <aside class="space-y-6">
+                <div class="cartao p-6 xl:sticky xl:top-24">
+                    <h2 class="text-2xl font-bold text-white">Foto da peça</h2>
+                    <div class="mt-4 flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-carbon-800 fundo-grade text-carbon-600">
+                        <img src="@(string.IsNullOrEmpty(Model.ImagemUrlAtual) ? null : Url.Content(Model.ImagemUrlAtual))" alt="Pré-visualização da foto"
+                             class="h-full w-full object-cover @(string.IsNullOrEmpty(Model.ImagemUrlAtual) ? "hidden" : "")" data-preview-imagem />
+                        <i data-lucide="image" class="h-12 w-12 @(string.IsNullOrEmpty(Model.ImagemUrlAtual) ? "" : "hidden")" data-preview-vazio></i>
+                    </div>
+                    <label asp-for="Imagem" class="rotulo mt-4"></label>
+                    <input asp-for="Imagem" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" data-max-bytes="5242880" data-preview-alvo="[data-preview-imagem]"
+                           class="block w-full text-sm text-tecnico file:mr-3 file:rounded-lg file:border-0 file:bg-carbon-700 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-carbon-600" />
+                    <span asp-validation-for="Imagem"></span>
+                    @if (Model.Edicao) { <p class="ajuda">Envie uma nova foto apenas se quiser substituir a atual.</p> }
+
+                    <button type="submit" class="btn-primario btn-lg mt-6 w-full"><i data-lucide="save"></i> @(Model.Edicao ? "Salvar alterações" : "Cadastrar peça")</button>
+                    <a asp-action="Pecas" class="btn-fantasma mt-2 w-full">Cancelar</a>
+                </div>
+            </aside>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,93 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Criar conta";
+    var ufs = Estados.Siglas.Select(s => new SelectListItem(s, s));
+}
+<div class="container-site py-12">
+    <div class="mx-auto grid max-w-5xl gap-10 lg:grid-cols-5">
+        <div class="lg:col-span-2 lg:pt-8">
+            <!-- INSERIR LOGO PEÇAS AUTOMOTIVAS AQUI -->
+            <partial name="_Logo" />
+            <h1 class="mt-8 text-5xl font-extrabold uppercase leading-[0.95] text-white">Compre como a montadora compra</h1>
+            <p class="mt-4 text-tecnico">Conta para pessoa física (CPF) ou oficina, frota e revenda (CNPJ).</p>
+            <ul class="mt-8 space-y-3 text-sm text-white/85">
+                <li class="flex items-center gap-3"><i data-lucide="badge-check" class="h-5 w-5 text-laranja"></i> Peças com código OEM e lote de fábrica</li>
+                <li class="flex items-center gap-3"><i data-lucide="truck" class="h-5 w-5 text-laranja"></i> Acompanhamento do lote até a entrega</li>
+                <li class="flex items-center gap-3"><i data-lucide="receipt" class="h-5 w-5 text-laranja"></i> Histórico de pedidos e economia</li>
+            </ul>
+        </div>
+
+        <div class="cartao relative overflow-hidden p-6 sm:p-8 lg:col-span-3">
+            <div class="absolute inset-x-0 top-0 h-1.5 faixa-industrial" aria-hidden="true"></div>
+            <form asp-action="Register" method="post" class="space-y-5" novalidate>
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div>
+                    <label asp-for="NomeCompleto" class="rotulo"></label>
+                    <input asp-for="NomeCompleto" class="campo" autocomplete="name" />
+                    <span asp-validation-for="NomeCompleto"></span>
+                </div>
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div>
+                        <label asp-for="Email" class="rotulo"></label>
+                        <input asp-for="Email" class="campo" autocomplete="email" inputmode="email" />
+                        <span asp-validation-for="Email"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Telefone" class="rotulo"></label>
+                        <input asp-for="Telefone" class="campo" autocomplete="tel" inputmode="tel" placeholder="(41) 99999-9999" data-mascara="telefone" />
+                        <span asp-validation-for="Telefone"></span>
+                    </div>
+                </div>
+                <div>
+                    <label asp-for="CPF_CNPJ" class="rotulo"></label>
+                    <input asp-for="CPF_CNPJ" class="campo" inputmode="numeric" placeholder="000.000.000-00 ou 00.000.000/0000-00" data-mascara="documento" />
+                    <span asp-validation-for="CPF_CNPJ"></span>
+                </div>
+                <div class="grid gap-5 sm:grid-cols-3">
+                    <div class="sm:col-span-2">
+                        <label asp-for="Cidade" class="rotulo"></label>
+                        <input asp-for="Cidade" class="campo" autocomplete="address-level2" />
+                        <span asp-validation-for="Cidade"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Estado" class="rotulo"></label>
+                        <select asp-for="Estado" asp-items="ufs" class="campo" autocomplete="address-level1">
+                            <option value="">UF</option>
+                        </select>
+                        <span asp-validation-for="Estado"></span>
+                    </div>
+                </div>
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div>
+                        <label asp-for="Senha" class="rotulo"></label>
+                        <input asp-for="Senha" class="campo" autocomplete="new-password" />
+                        <span asp-validation-for="Senha"></span>
+                    </div>
+                    <div>
+                        <label asp-for="ConfirmarSenha" class="rotulo"></label>
+                        <input asp-for="ConfirmarSenha" class="campo" autocomplete="new-password" />
+                        <span asp-validation-for="ConfirmarSenha"></span>
+                    </div>
+                </div>
+                <p class="ajuda -mt-2">Mínimo de 10 caracteres, com letra maiúscula, minúscula, número e símbolo.</p>
+
+                <div>
+                    <label class="flex items-start gap-2.5 text-sm text-tecnico">
+                        <input asp-for="AceitoTermos" class="caixa-selecao mt-0.5" />
+                        <span>@Html.DisplayNameFor(m => m.AceitoTermos)</span>
+                    </label>
+                    <span asp-validation-for="AceitoTermos"></span>
+                </div>
+
+                <button type="submit" class="btn-primario btn-lg w-full"><i data-lucide="user-plus"></i> Criar conta</button>
+                <p class="text-center text-sm text-tecnico">Já tem conta? <a asp-action="Login" class="font-semibold text-laranja hover:underline">Entrar</a></p>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
